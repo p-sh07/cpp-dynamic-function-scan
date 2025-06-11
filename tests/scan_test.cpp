@@ -7,3 +7,23 @@ TEST(ScanTest, SimpleTest) {
     auto result = stdx::scan<std::string>("number", "{}");
     ASSERT_FALSE(result);
 }
+
+TEST(ScanTest, SimpleTest2) {
+    auto result = stdx::scan<float>("1.23", "{%f}");
+    ASSERT_TRUE(result);
+}
+
+TEST(ScanTest, SimpleTest3) {
+    auto result = stdx::scan<float>("1.23", "{%s}");
+    ASSERT_FALSE(result);
+}
+
+TEST(ScanTest, SimpleTest4) {
+    auto result = stdx::scan<int>("123", "{%u}");
+    ASSERT_FALSE(result);
+}
+
+TEST(ScanTest, SimpleTest5) {
+    auto result = stdx::scan<int>("123", "{%d}");
+    ASSERT_TRUE(result);
+}
