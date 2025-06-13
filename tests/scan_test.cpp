@@ -5,7 +5,7 @@
 
 TEST(ScanTest, SimpleTest) {
     auto result = stdx::scan<std::string>("number", "{}");
-    ASSERT_FALSE(result);
+    ASSERT_TRUE(result);
 }
 
 TEST(ScanTest, SimpleTest2) {
@@ -27,3 +27,13 @@ TEST(ScanTest, SimpleTest5) {
     auto result = stdx::scan<int>("123", "{%d}");
     ASSERT_TRUE(result);
 }
+
+//TODO: rewrite as test with values -> 5 correct, 5 incorrect, 15 total
+
+//TODO:
+//Сompile-time-проверки на корректность шаблонных параметров и результатов во всех подходящих местах.
+//consexr / static_assert?
+
+//Код следует принципам SOLID и KISS.
+
+

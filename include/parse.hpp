@@ -9,14 +9,42 @@
 
 #include "types.hpp"
 
+//use sv for format tokens in case of multichar and to avoid having to strip %
+// - more flexibility in case of changes, or if a different escape symbol is used e.g. \
+
 namespace stdx::details {
-struct FormatChars {
-    static constexpr char Int      = 'd';
-    static constexpr char Uint     = 'u';
-    static constexpr char String   = 's';
-    static constexpr char FloatDbl = 'f';
+using std::literals::operator ""s;
+using std::literals::operator ""sv;
+
+//================ Make std::unexpected error shorthand ==============
+auto make_scan_error(std::string message) {
+    return std::unexpected( scan_error{std::move(message)} );
+}
+
+//================ Token processing ================
+const static constexpr char FORMAT_ESCAPE_CHAR = '%';
+
+enum class FormatToken : char {
+    Int = 'd',
+    Uint = 'u',
+    String  = 's',
+    FloatDbl = 'f',
+    Empty = ' ',
 };
 
+//More flexible than using char - can use other escape symbol, multi-letter fmt token, etc.
+std::expected<FormatToken, scan_error> strview_to_token(std::string_view fmt) {
+    if(fmt.empty()) {
+        return FormatToken::Empty;
+    }
+    if(fmt.size() != 2 || fmt[0] != FORMAT_ESCAPE_CHAR) {
+        return make_scan_error("Invalid Format token: " + std::string(fmt));
+    }
+    return static_cast<FormatToken>(fmt[1]);
+}
+
+
+//================ Types estrictions for parsing/scan ================
 //Could have used is_integral, but that includes char & bool
 template<typename T>
 concept integer_number = std::is_same_v<T, int8_t> || std::is_same_v<T, int16_t>
@@ -40,6 +68,8 @@ concept string_type = std::is_same_v<T, std::string> || std::is_same_v<T, std::s
 template<typename T>
 concept valid_type = number<T> || string_type<T>;
 
+
+//================ Parsing functions ================
 template<typename T>
 std::expected<T, scan_error> parse_value(std::string_view input) requires whole_number<T> {
     T value;
@@ -50,15 +80,15 @@ std::expected<T, scan_error> parse_value(std::string_view input) requires whole_
     auto result = std::from_chars(first, last, value);
 
     if (result.ptr != last) {
-        return std::unexpected(scan_error{"failed to parse Int"});
+        return make_scan_error("failed to parse integer number"s);
     }
 
     if (result.ec == std::errc::invalid_argument) {
-        return std::unexpected(scan_error{"Failed to parse Int: invalid argument"});
+        return make_scan_error("Failed to parse integer number: invalid argument"s);
     }
 
     if (result.ec == std::errc::result_out_of_range) {
-        return std::unexpected(scan_error{"Failed to parse Int: result out of range"});
+        return make_scan_error("Failed to parse integer number: result out of range"s);
     }
 
     return value;
@@ -67,8 +97,11 @@ std::expected<T, scan_error> parse_value(std::string_view input) requires whole_
 template<typename T>
 std::expected<T, scan_error> parse_value(std::string_view input) requires float_number<T> {
     //TODO: in clang from_chars doesn't work with float - known bug
-    std::string float_str{input};
-    return static_cast<T>(std::stod(float_str));
+    try {
+        return static_cast<T>(std::stod(std::string{input}));
+    } catch (std::exception& ex) {
+        return make_scan_error("Failed to parse decimal number: "s + ex.what());
+    }
 }
 
 template<string_type T>
@@ -76,53 +109,63 @@ std::expected<T, scan_error> parse_value(std::string_view input) {
     return T{input};
 }
 
-template<valid_type T>
-std::expected<T, scan_error> parse_value(std::string_view input, char fmt) {
-    if (fmt == FormatChars::Int && !integer_number<T>) {
-        return std::unexpected(scan_error{"Using wrong type with Int format"});
-    }
-    if (fmt == FormatChars::Uint && !natural_number<T>) {
-        return std::unexpected(scan_error{"Using wrong type with Unsigned int format"});
-    }
-    if (fmt == FormatChars::FloatDbl && !float_number<T>) {
-        return std::unexpected(scan_error{"Using wrong type with Floating pt. format"});
-    }
-
-    return parse_value<T> (input);
-}
-
+//TODO: add check that type is not a ref/pointer
 // Функция для парсинга значения с учетом спецификатора формата
 template<typename T>
 std::expected<T, scan_error> parse_value_with_format(std::string_view input, std::string_view fmt) {
-    // здесь ваш код
     if (input.size() == 0) {
-        return std::unexpected(scan_error{"Empty input to parse"});
+        return make_scan_error("Empty input to parse"s);
     }
 
-    //NB: only single char expected for format
-    if (fmt.size() > 1) {
-        return std::unexpected(scan_error{"Incorrect Format in parse"});
+    auto token = strview_to_token(fmt);
+    if(!token) {
+        return std::unexpected(token.error());
     }
 
-    return fmt.empty()
-               ? parse_value<T>(input, ' ')
-               : parse_value<T>(input, fmt[0]);
+    switch (token.value()) {
+        case FormatToken::Int:
+            if (!integer_number<T>) {
+                return make_scan_error("Using wrong type with Int format token"s);
+            }
+        break;
+
+        case FormatToken::Uint:
+            if (!natural_number<T>) {
+                return make_scan_error("Using wrong type with Unsigned int format token"s);
+            }
+        break;
+
+        case FormatToken::FloatDbl:
+            if (!float_number<T>) {
+                return make_scan_error("Using wrong type with Floating pt. format token"s);
+            }
+        break;
+
+        case FormatToken::String:
+            if (!string_type<T>) {
+                return make_scan_error("Using wrong type with string format token"s);
+            }
+        break;
+
+        case FormatToken::Empty:
+            if (!valid_type<T>) {
+                return make_scan_error("Invalid type used with scan function token"s);
+            }
+        break;
+
+        default:
+            return make_scan_error("Unsupported format token"s);
+    }
+
+    return parse_value<T>(input);
 
 }
 
-/**
- * 2. В файле parse.hpp изучите реализацию функции parse_sources, которая возвращает пару массивов
- * подстрок форматирующей и исходной строки. Элементы массивов с одинаковыми индексами соответствуют
- * плейсхолдеру в форматирующей строке и релевантной ему подстроке в строке с исходными данными.
- * В parse_sources используется шаблонный класс std::expected. Перед его использованием прочтите
- * документацию: https://en.cppreference.com/w/cpp/utility/expected.html
- *
- */
+using parse_source_result = std::expected<std::pair<std::vector<std::string_view>, std::vector<std::string_view>>, scan_error>;
 
 // Функция для проверки корректности входных данных и выделения из обеих строк интересующих данных для парсинга
 template<typename... Ts>
-std::expected<std::pair<std::vector<std::string_view>, std::vector<std::string_view>>, scan_error>
-parse_sources(std::string_view input, std::string_view format) {
+parse_source_result parse_sources(std::string_view input, std::string_view format) {
     std::vector<std::string_view> format_parts; // Части формата между {}
     std::vector<std::string_view> input_parts;
     size_t start = 0;
@@ -142,7 +185,7 @@ parse_sources(std::string_view input, std::string_view format) {
             std::string_view between = format.substr(start, open - start);
             auto pos                 = input.find(between);
             if (input.size() < between.size() || pos == std::string_view::npos) {
-                return std::unexpected(scan_error{"Unformatted text in input and format string are different"});
+                return make_scan_error("Unformatted text in input and format string are different"s);
             }
             if (start != 0) {
                 input_parts.emplace_back(input.substr(0, pos));
@@ -161,7 +204,7 @@ parse_sources(std::string_view input, std::string_view format) {
         std::string_view remaining_format = format.substr(start);
         auto pos                          = input.find(remaining_format);
         if (input.size() < remaining_format.size() || pos == std::string_view::npos) {
-            return std::unexpected(scan_error{"Unformatted text in input and format string are different"});
+            return make_scan_error("Unformatted text in input and format string are different"s);
         }
         input_parts.emplace_back(input.substr(0, pos));
         input = input.substr(pos + remaining_format.size());
