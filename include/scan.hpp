@@ -41,6 +41,7 @@ scan_results_or_err<Ts...> scan(std::string_view input, std::string_view format)
      * And performs 'process_value' for all of the parse_results vector contents
      * using NTTP <size_t n> as index for input and fmt vectors, parsing it into the corresponding type in Ts
      */
+    //TODO: do this with std::apply? or just simple lambda without process_value?
     return [&]<std::size_t...Idxs>(std::index_sequence<Idxs...>) {
         return check_if_any_error<Ts...>(
             process_value<Ts, Idxs>(parse_results->first, parse_results->second)...);
