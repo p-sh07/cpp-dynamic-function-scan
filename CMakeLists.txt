@@ -21,11 +21,3 @@ target_link_libraries(${test_target} PRIVATE ${target} GTest::GTest GTest::Main)
 # Включаем тестирование
 enable_testing()
 add_test(NAME ${test_target} COMMAND ${PROJECT_NAME}_tests)
-
-#add_executable(scan_main
-#        main.cpp
-#        include/parse.hpp
-#        include/types.hpp
-#        include/scan.hpp
-#)
-#target_include_directories(scan_main PRIVATE include)

@@ -23,9 +23,9 @@ scan_results_or_err<Values...> check_if_any_error(ScanResults... results) {
     if (!(... && results.has_value())) {
 
         //TODO: test if needs has_value check or if only goes into this branch for errors
-        // Collect error messages from all failed arguments
+        // Collect error messages from all failed arguments //results.has_value() ? "+" :
         std::string combined_message;
-        ((combined_message += (results.has_value() ? "+" : results.error().message) + "; "), ...);
+        ((combined_message += (results.error().message) + "; "), ...);
 
         return details::make_scan_error(combined_message);
     }

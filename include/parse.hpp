@@ -113,6 +113,9 @@ std::expected<T, scan_error> parse_value(std::string_view input) {
 // Функция для парсинга значения с учетом спецификатора формата
 template<typename T>
 std::expected<T, scan_error> parse_value_with_format(std::string_view input, std::string_view fmt) {
+    //check that not a ref or pointer type - static assert or return std::unexpected is better?
+    static_assert(!std::is_reference_v<T> && !std::is_pointer_v<T>);
+
     if (input.size() == 0) {
         return make_scan_error("Empty input to parse"s);
     }
