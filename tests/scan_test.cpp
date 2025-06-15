@@ -18,7 +18,7 @@ using ::testing::Values;
 //====== Correct tests:
 //Simple test, no extra text
 TEST(ScanTest, test_correct_1) {
-    int8_t expected {42};
+    int8_t expected{42};
     auto result = scan<int>("42", "{}");
 
     ASSERT_TRUE(result.has_value());
@@ -64,53 +64,58 @@ TEST(ScanTest, test_correct_5) {
 
 //====== Error tests:
 // Mismatched fmt tokens
- TEST(ScanTest, test_incorrect_1) {
-     auto result = scan<int, float>("hello 1 this is 3.14 scan", "hello {%f} this is {%d} scan");
-     ASSERT_FALSE(result.has_value());
- }
+TEST(ScanTest, test_incorrect_1) {
+    auto result = scan<int, float>("hello 1 this is 3.14 scan", "hello {%f} this is {%d} scan");
+    std::cerr << result.error().message << std::endl;
+    ASSERT_FALSE(result.has_value());
+}
 
- //Invalid fmt tokens
- TEST(ScanTest, test_incorrect_2) {
-     auto result = scan<double, uint64_t>("hello 1 this is 3.14 scan", "hello {%a} this is {$s} scan");
-     ASSERT_FALSE(result.has_value());
- }
+//Invalid fmt tokens
+TEST(ScanTest, test_incorrect_2) {
+    auto result = scan<double, uint64_t>("hello 1 this is 3.14 scan", "hello {%a} this is {$s} scan");
+    std::cerr << result.error().message << std::endl;
+    ASSERT_FALSE(result.has_value());
+}
 
 //Invalid input data
 TEST(ScanTest, test_incorrect_3) {
     auto result = scan<float, int32_t>("hello there, this is 3.14 scan", "hello {%f} this is {%d} scan");
+    std::cerr << result.error().message << std::endl;
     ASSERT_FALSE(result.has_value());
 }
 
 //Invalid input data - int overflow
 TEST(ScanTest, test_incorrect_4) {
     auto result = scan<float, int8_t>("hello 1.1 this is 129 scan", "hello {%f} this is {%d} scan");
+    std::cerr << result.error().message << std::endl;
     ASSERT_FALSE(result.has_value());
 }
 
 //Invalid input data - wrong fmt placement in text
 TEST(ScanTest, test_incorrect_5) {
     auto result = scan<float, uint32_t>("hello 1.1 this is 2147483647 scan", "hello this {%f} is scan {%u}");
+    std::cerr << result.error().message << std::endl;
     ASSERT_FALSE(result.has_value());
 }
 
 //==== Compile-time checks:
- //Unsupported types -> doesn't compile with "error: no matching function for call to 'parse_value' "
- // TEST(ScanTest, test_incorrect_3) {
- //     auto result = scan<char, bool>("hello c this is 1 scan", "hello {} this is {} scan");
- //     ASSERT_FALSE(result.has_value());
- // }
+//Unsupported types -> doesn't compile with "error: no matching function for call to 'parse_value' "
+// TEST(ScanTest, test_incorrect_3) {
+//     auto result = scan<char, bool>("hello c this is 1 scan", "hello {} this is {} scan");
+//     ASSERT_FALSE(result.has_value());
+// }
 
- //Ref types -> doesn't compile with "error: static assertion failed due to requirement '!is_reference_v<int &>' "
- // TEST(ScanTest, test_incorrect_4) {
- //     auto result = scan<int&, float&>("hello 1 this is 3.14 scan", "hello {} this is {} scan");
- //     ASSERT_FALSE(result.has_value());
- // }
+//Ref types -> doesn't compile with "error: static assertion failed due to requirement '!is_reference_v<int &>' "
+// TEST(ScanTest, test_incorrect_4) {
+//     auto result = scan<int&, float&>("hello 1 this is 3.14 scan", "hello {} this is {} scan");
+//     ASSERT_FALSE(result.has_value());
+// }
 
- //Ptr types -> doesn't compile with "error: static assertion failed due to requirement '!std::is_pointer_v<int *>' "
- // TEST(ScanTest, test_incorrect_5) {
- //     auto result = scan<int*, float*>("hello 1 this is 3.14 scan", "hello {} this is {} scan");
- //     ASSERT_FALSE(result.has_value());
- // }
+//Ptr types -> doesn't compile with "error: static assertion failed due to requirement '!std::is_pointer_v<int *>' "
+// TEST(ScanTest, test_incorrect_5) {
+//     auto result = scan<int*, float*>("hello 1 this is 3.14 scan", "hello {} this is {} scan");
+//     ASSERT_FALSE(result.has_value());
+// }
 
 
 //======== Test suite P:
@@ -137,6 +142,4 @@ TEST(ScanTest, test_incorrect_5) {
 // INSTANTIATE_TEST_SUITE_P(
 //
 // );
-
 } //namespace
-

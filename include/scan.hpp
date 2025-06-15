@@ -3,9 +3,6 @@
 #include "parse.hpp"
 #include "types.hpp"
 
-//DEBUG
-#include <iostream>
-
 namespace stdx {
 
 template<typename... Ts>
@@ -18,11 +15,9 @@ auto process_value(const auto& parsed_inputs, const auto& format_tokens) {
 
 template<typename... Values, typename... ScanResults>
 scan_results_or_err<Values...> check_if_any_error(ScanResults... results) {
-
     // If any of args has no value -> error
     if (!(... && results.has_value())) {
 
-        //TODO: test if needs has_value check or if only goes into this branch for errors
         // Collect error messages from all failed arguments //results.has_value() ? "+" :
         std::string combined_message;
         ((combined_message += (results.error().message) + "; "), ...);
@@ -32,29 +27,24 @@ scan_results_or_err<Values...> check_if_any_error(ScanResults... results) {
     return details::scan_result<Values...>{results.value()...};
 }
 
-//Process all values and return combined error messages if any occired
-template <typename... Ts, size_t... Is>
-scan_results_or_err<Ts...> process_all(const auto& parsed_inputs, const auto& format_tokens, std::index_sequence<Is...>) {
-    return check_if_any_error<Ts...>(process_value<Ts, Is>(parsed_inputs,format_tokens)...);
-}
-
 //Like scanf: https://en.cppreference.com/w/c/io/fscanf
 template <typename... Ts>
 scan_results_or_err<Ts...> scan(std::string_view input, std::string_view format) {
-
     const auto parse_results = details::parse_sources<Ts...>(input, format);
 
     if(!parse_results) {
         return std::unexpected(parse_results.error());
     }
 
-    auto parsed_inputs = parse_results->first;
-    auto format_tokens = parse_results->second;
-
-    //TODO: convert this into a lambda
-    auto result = process_all<Ts...>(parsed_inputs, format_tokens, std::make_index_sequence<sizeof...(Ts)>{});
-
-    return result;
+    /**
+     * This lambda makes an index sequence 'Idxs' 0 -> the number of arguments Ts
+     * And performs 'process_value' for all of the parse_results vector contents
+     * using NTTP <size_t n> as index for input and fmt vectors, parsing it into the corresponding type in Ts
+     */
+    return [&]<std::size_t...Idxs>(std::index_sequence<Idxs...>) {
+        return check_if_any_error<Ts...>(
+            process_value<Ts, Idxs>(parse_results->first, parse_results->second)...);
+    }(std::make_index_sequence<sizeof...(Ts)>{});
 }
 
 } // namespace stdx

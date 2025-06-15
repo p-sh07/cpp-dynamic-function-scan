@@ -9,9 +9,6 @@
 
 #include "types.hpp"
 
-//use sv for format tokens in case of multichar and to avoid having to strip %
-// - more flexibility in case of changes, or if a different escape symbol is used e.g. \
-
 namespace stdx::details {
 using std::literals::operator ""s;
 using std::literals::operator ""sv;
@@ -22,7 +19,7 @@ auto make_scan_error(std::string message) {
 }
 
 //================ Token processing ================
-const static constexpr char FORMAT_ESCAPE_CHAR = '%';
+static constexpr char FORMAT_ESCAPE_CHAR = '%';
 
 enum class FormatToken : char {
     Int = 'd',
@@ -43,8 +40,7 @@ std::expected<FormatToken, scan_error> strview_to_token(std::string_view fmt) {
     return static_cast<FormatToken>(fmt[1]);
 }
 
-
-//================ Types estrictions for parsing/scan ================
+//================ Types restrictions for parsing/scan ================
 //Could have used is_integral, but that includes char & bool
 template<typename T>
 concept integer_number = std::is_same_v<T, int8_t> || std::is_same_v<T, int16_t>
@@ -109,8 +105,6 @@ std::expected<T, scan_error> parse_value(std::string_view input) {
     return T{input};
 }
 
-//TODO: add check that type is not a ref/pointer
-// Функция для парсинга значения с учетом спецификатора формата
 template<typename T>
 std::expected<T, scan_error> parse_value_with_format(std::string_view input, std::string_view fmt) {
     //check that not a ref or pointer type - static assert or return std::unexpected is better?
@@ -166,7 +160,6 @@ std::expected<T, scan_error> parse_value_with_format(std::string_view input, std
 
 using parse_source_result = std::expected<std::pair<std::vector<std::string_view>, std::vector<std::string_view>>, scan_error>;
 
-// Функция для проверки корректности входных данных и выделения из обеих строк интересующих данных для парсинга
 template<typename... Ts>
 parse_source_result parse_sources(std::string_view input, std::string_view format) {
     std::vector<std::string_view> format_parts; // Части формата между {}
