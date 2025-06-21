@@ -116,20 +116,20 @@ TEST(ScanTest, test_incorrect_5) {
 }
 
 //==== Compile-time checks:
-//Unsupported types -> doesn't compile with "error: no matching function for call to 'parse_value' "
-// TEST(ScanTest, test_incorrect_3) {
+//Unsupported types -> doesn't compile with "error: static assertion failed: 122/ static_assert(is_valid_type<T>);"
+// TEST(ScanTest, test_incorrect_6) {
 //     auto result = scan<char, bool>("hello c this is 1 scan", "hello {} this is {} scan");
 //     ASSERT_FALSE(result.has_value());
 // }
 
 //Ref types -> doesn't compile with "error: static assertion failed due to requirement '!is_reference_v<int &>' "
-// TEST(ScanTest, test_incorrect_4) {
+// TEST(ScanTest, test_incorrect_7) {
 //     auto result = scan<int&, float&>("hello 1 this is 3.14 scan", "hello {} this is {} scan");
 //     ASSERT_FALSE(result.has_value());
 // }
 
 //Ptr types -> doesn't compile with "error: static assertion failed due to requirement '!std::is_pointer_v<int *>' "
-// TEST(ScanTest, test_incorrect_5) {
+// TEST(ScanTest, test_incorrect_8) {
 //     auto result = scan<int*, float*>("hello 1 this is 3.14 scan", "hello {} this is {} scan");
 //     ASSERT_FALSE(result.has_value());
 // }

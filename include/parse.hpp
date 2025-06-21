@@ -73,7 +73,7 @@ template<typename T>
 concept string_type = std::is_same_v<T, std::string> || std::is_same_v<T, std::string_view>;
 
 template<typename T>
-concept valid_type = number<T> || string_type<T>;
+concept is_valid_type = number<T> || string_type<T>;
 
 
 //================ Parsing functions ================
@@ -118,7 +118,10 @@ std::expected<T, scan_error> parse_value(std::string_view input) {
 
 template<typename T>
 std::expected<T, scan_error> parse_value_with_format(std::string_view input, std::string_view fmt) {
-    //check that not a ref or pointer type - static assert or return std::unexpected is better?
+    //This prevents compilation with an unsupported type, clearer error than with "no matchung function call..."
+    static_assert(is_valid_type<T>);
+
+    //check that not a ref or pointer type, compile-time
     static_assert(!std::is_reference_v<T> && !std::is_pointer_v<T>);
 
     if (input.size() == 0) {
@@ -156,7 +159,7 @@ std::expected<T, scan_error> parse_value_with_format(std::string_view input, std
         break;
 
         case FormatToken::Empty:
-            if (!valid_type<T>) {
+            if (!is_valid_type<T>) {
                 return make_scan_error("Invalid type used with scan function token"s);
             }
         break;
