@@ -2,17 +2,18 @@
 
 namespace stdx::details {
 
-// Класс для хранения ошибки неуспешного сканирования
-
 struct scan_error {
     std::string message;
 };
 
-// Шаблонный класс для хранения результатов успешного сканирования
-
 template <typename... Ts>
 struct scan_result {
-    // здесь ваш код
+    scan_result() = default;
+
+    template<typename... Args>
+    scan_result(Args&&... args) : values(std::make_tuple(args...)) {}
+
+    std::tuple<Ts...> values;
 };
 
 } // namespace stdx::details
