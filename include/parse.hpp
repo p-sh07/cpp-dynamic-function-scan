@@ -22,22 +22,33 @@ auto make_scan_error(std::string message) {
 static constexpr char FORMAT_ESCAPE_CHAR = '%';
 
 enum class FormatToken : char {
-    Int = 'd',
-    Uint = 'u',
-    String  = 's',
-    FloatDbl = 'f',
-    Empty = ' ',
+    Int,
+    Uint,
+    String,
+    FloatDbl,
+    Empty,
 };
 
 //More flexible than using char - can use other escape symbol, multi-letter fmt token, etc.
-std::expected<FormatToken, scan_error> strview_to_token(std::string_view fmt) {
+std::expected<FormatToken, scan_error> sv_to_token(std::string_view fmt) {
     if(fmt.empty()) {
         return FormatToken::Empty;
     }
     if(fmt.size() != 2 || fmt[0] != FORMAT_ESCAPE_CHAR) {
-        return make_scan_error("Invalid Format token: " + std::string(fmt));
+        return make_scan_error("Invalid Format token: " + std::string{fmt});
     }
-    return static_cast<FormatToken>(fmt[1]);
+    switch(fmt[1]) {
+        case 'd':
+            return FormatToken::Int;
+        case 'u':
+            return FormatToken::Uint;
+        case 's':
+            return FormatToken::String;
+        case 'f':
+            return FormatToken::FloatDbl;
+        default:
+            return make_scan_error("Invalid Format token: " + std::string{fmt});
+    }
 }
 
 //================ Types restrictions for parsing/scan ================
@@ -114,7 +125,7 @@ std::expected<T, scan_error> parse_value_with_format(std::string_view input, std
         return make_scan_error("Empty input to parse"s);
     }
 
-    auto token = strview_to_token(fmt);
+    auto token = sv_to_token(fmt);
     if(!token) {
         return std::unexpected(token.error());
     }

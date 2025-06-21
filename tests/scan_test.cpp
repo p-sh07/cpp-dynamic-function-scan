@@ -26,21 +26,22 @@ TEST(ScanTest, test_correct_1) {
     ASSERT_EQ(std::get<0>(result->values()), expected);
 }
 
-//Empty fmt, short test, int / float
+//Empty fmt, short test, double / float
 TEST(ScanTest, test_correct_2) {
-    std::tuple<int, float> expected{1, 3.1483834};
-    auto result = scan<int, float>("hello 1 this is 3.1483834 scan"sv, "hello {} this is {} scan"sv);
+    std::tuple<double, float> expected{-0.0019380412341, 3.1483834};
+    auto result = scan<double, float>("hello -0.0019380412341 this is 3.1483834 scan"sv, "hello {} this is {} scan"sv);
 
     ASSERT_TRUE(result);
-    ASSERT_EQ(result->values(), expected);
+    ASSERT_DOUBLE_EQ(std::get<double>(result->values()), std::get<double>(expected));
+    ASSERT_FLOAT_EQ(std::get<float>(result->values()), std::get<float>(expected));
 }
 
-//Empty fmt, long test, int32_t / int8_t / uint16_t / double / std::string
+//Empty fmt, long test, int32_t / int8_t / uint16_t / std::string_view / std::string
 TEST(ScanTest, test_correct_3) {
-    std::tuple<int32_t, int8_t, uint16_t, double, std::string> expected{2147483600, -128, 65530, -0.0019380412341, "each"s};
-    auto result = scan<int32_t, int8_t, uint16_t, double, std::string>(
+    std::tuple<int32_t, int8_t, uint16_t, const std::string_view, std::string> expected{2147483600, -128, 65530, "some"sv, "each"s};
+    auto result = scan<int32_t, int8_t, uint16_t, const std::string_view, std::string>(
         "if I could take 2147483600 apples and make them into -128 pies i could "
-        "feed 65530 people. They would get -0.0019380412341 pie each"sv,
+        "feed 65530 people. They would get some pie each"sv,
         "if I could take {} apples and make them into {} pies i could "
         "feed {} people. They would get {} pie {}"sv);
 
@@ -64,14 +65,14 @@ TEST(ScanTest, test_correct_4) {
     ASSERT_EQ(result->values(), expected);
 }
 
-//With correct fmt tokens, long test, uint32_t / int64_t /std::strig / std::string_view
+//With correct fmt tokens, const, long test, uint32_t / const int64_t /std::strig / std::string_view
 TEST(ScanTest, test_correct_5) {
-    std::tuple<uint32_t, int64_t, std::string, std::string_view> expected{2147483600, -128423423, "truly a lot of pie"s, "each"sv};
-    auto result = scan<uint32_t, int64_t, std::string, std::string_view>(
+    std::tuple<uint32_t, int64_t, std::string, const std::string_view> expected{2147483600, -128423423, "a lot of negative"s, "truly a lot"sv};
+    auto result = scan<uint32_t, const int64_t, std::string, const std::string_view>(
         "if I could take 2147483600 apples and make them into -128423423 pies i could "
         "feed a lot of negative people. They would get truly a lot of pie each"sv,
         "if I could take {} apples and make them into {} pies i could "
-        "feed {} people. They would get {} each"sv);
+        "feed {} people. They would get {} of pie each"sv);
 
     ASSERT_TRUE(result.has_value());
     ASSERT_EQ(result->values(), expected);

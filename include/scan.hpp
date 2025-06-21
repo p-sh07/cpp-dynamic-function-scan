@@ -10,7 +10,8 @@ using scan_results_or_err = std::expected<details::scan_result<Ts...>, details::
 
 template<typename T, size_t n>
 auto process_value(const auto& parsed_inputs, const auto& format_tokens) {
-    return details::parse_value_with_format<T>(parsed_inputs[n], format_tokens[n]);
+    //NB: remove_cv_t to allow processing const types
+    return details::parse_value_with_format<std::remove_cv_t<T>>(parsed_inputs[n], format_tokens[n]);
 }
 
 template<typename... Values, typename... ScanResults>
@@ -20,7 +21,7 @@ scan_results_or_err<Values...> check_if_any_error(ScanResults... results) {
 
         // Collect error messages from all failed arguments //results.has_value() ? "+" :
         std::string combined_message;
-        ((combined_message += (results.error().message) + "; "), ...);
+        ((combined_message += (results.has_value() ? "+++No error+++" : results.error().message) + "; "), ...);
 
         return details::make_scan_error(combined_message);
     }
