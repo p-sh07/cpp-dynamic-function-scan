@@ -19,7 +19,7 @@ scan_results_or_err<Values...> check_if_any_error(ScanResults... results) {
     // If any of args has no value -> error
     if (!(... && results.has_value())) {
 
-        // Collect error messages from all failed arguments //results.has_value() ? "+" :
+        // Collect error messages
         std::string combined_message;
         ((combined_message += (results.has_value() ? "+++No error+++" : results.error().message) + "; "), ...);
 
@@ -37,11 +37,6 @@ scan_results_or_err<Ts...> scan(std::string_view input, std::string_view format)
         return std::unexpected(parse_results.error());
     }
 
-    /**
-     * This lambda makes an index sequence 'Idxs' 0 -> the number of arguments Ts
-     * And performs 'process_value' for all of the parse_results vector contents
-     * using NTTP <size_t n> as index for input and fmt vectors, parsing it into the corresponding type in Ts
-     */
     return [&]<std::size_t...Idxs>(std::index_sequence<Idxs...>) {
         return check_if_any_error<Ts...>(
             process_value<Ts, Idxs>(parse_results->first, parse_results->second)...);
