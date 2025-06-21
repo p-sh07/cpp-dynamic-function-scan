@@ -11,18 +11,9 @@ struct scan_result {
     scan_result() = default;
 
     template<typename... Args>
-    scan_result(Args&&... args) : data(std::make_tuple(args...)) {}
+    scan_result(Args&&... args) : values(std::make_tuple(args...)) {}
 
-    std::tuple<Ts...> data;
-
-    const std::tuple<Ts...>& values() const {
-        return data;
-    };
-
-    std::tuple<Ts...>& values() {
-        return data;
-    };
-
+    std::tuple<Ts...> values;
 };
 
 } // namespace stdx::details

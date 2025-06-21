@@ -23,7 +23,7 @@ TEST(ScanTest, test_correct_1) {
     auto result = scan<int>("42"sv, "{}"sv);
 
     ASSERT_TRUE(result.has_value());
-    ASSERT_EQ(std::get<0>(result->values()), expected);
+    ASSERT_EQ(std::get<0>(result->values), expected);
 }
 
 //Empty fmt, short test, double / float
@@ -32,8 +32,8 @@ TEST(ScanTest, test_correct_2) {
     auto result = scan<double, float>("hello -0.0019380412341 this is 3.1483834 scan"sv, "hello {} this is {} scan"sv);
 
     ASSERT_TRUE(result);
-    ASSERT_DOUBLE_EQ(std::get<double>(result->values()), std::get<double>(expected));
-    ASSERT_FLOAT_EQ(std::get<float>(result->values()), std::get<float>(expected));
+    ASSERT_DOUBLE_EQ(std::get<double>(result->values), std::get<double>(expected));
+    ASSERT_FLOAT_EQ(std::get<float>(result->values), std::get<float>(expected));
 }
 
 //Empty fmt, long test, int32_t / int8_t / uint16_t / std::string_view / std::string
@@ -46,7 +46,7 @@ TEST(ScanTest, test_correct_3) {
         "feed {} people. They would get {} pie {}"sv);
 
     ASSERT_TRUE(result.has_value());
-    ASSERT_EQ(result->values(), expected);
+    ASSERT_EQ(result->values, expected);
 }
 
 //With correct fmt tokens, short test, int16_t / uint8_t / uint64_t
@@ -62,7 +62,7 @@ TEST(ScanTest, test_correct_4) {
 
     std::cerr << result.error().message << std::endl;
     ASSERT_TRUE(result.has_value());
-    ASSERT_EQ(result->values(), expected);
+    ASSERT_EQ(result->values, expected);
 }
 
 //With correct fmt tokens, const, long test, uint32_t / const int64_t /std::strig / std::string_view
@@ -75,7 +75,7 @@ TEST(ScanTest, test_correct_5) {
         "feed {} people. They would get {} of pie each"sv);
 
     ASSERT_TRUE(result.has_value());
-    ASSERT_EQ(result->values(), expected);
+    ASSERT_EQ(result->values, expected);
 }
 
 
