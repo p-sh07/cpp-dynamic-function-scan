@@ -15,7 +15,7 @@ auto process_value(const auto& parsed_inputs, const auto& format_tokens) {
 }
 
 template<typename... Values, typename... ScanResults>
-scan_results_or_err<Values...> check_if_any_error(ScanResults... results) {
+scan_results_or_err<Values...> check_if_any_error(ScanResults&&... results) {
     // If any of args has no value -> error
     if (!(... && results.has_value())) {
 
@@ -25,7 +25,7 @@ scan_results_or_err<Values...> check_if_any_error(ScanResults... results) {
 
         return details::make_scan_error(combined_message);
     }
-    return details::scan_result<Values...>{results.value()...};
+    return details::scan_result<Values...>{std::forward<Values>(results.value())...};
 }
 
 //Like scanf: https://en.cppreference.com/w/c/io/fscanf
@@ -38,8 +38,8 @@ scan_results_or_err<Ts...> scan(std::string_view input, std::string_view format)
     }
 
     return [&]<std::size_t...Idxs>(std::index_sequence<Idxs...>) {
-        return check_if_any_error<Ts...>(
-            process_value<Ts, Idxs>(parse_results->first, parse_results->second)...);
+        return check_if_any_error<Ts...>(std::move(
+            process_value<Ts, Idxs>(parse_results->first, parse_results->second))...);
     }(std::make_index_sequence<sizeof...(Ts)>{});
 }
 
